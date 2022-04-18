@@ -10,7 +10,10 @@ contract Document {
   }
 
   function removeDocument(uint256 _index) public{
-    delete document[_index];
+    for(uint i = _index; i < document.length-1; i++){
+      document[i] = document[i+1];
+    }
+    document.pop();
     docCount--;
   }
 

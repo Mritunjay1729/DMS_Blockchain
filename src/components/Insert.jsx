@@ -2,22 +2,23 @@ import React from "react"
 
 const Insert = (props) =>{
     return ( 
-        <div className="col-lg-12 d-flex text-center ml-auto mr-auto">
-            <h2>Change Doc</h2>
+        <div className="col-lg-12 text-center ml-auto mr-auto">
+            <h2>Add Doc</h2>
             <form 
             onSubmit={(event)=>{
                 event.preventDefault()
-                props.addDocument(event)
+                props.handleSubmit(event)
                 }} 
             >
               <input type='file' 
+                className="btn btn-light btn-lg"
                 onChange={(event) => {
                     event.preventDefault();
-                    this.captureFile(event)
+                    props.handleChange(event)
                     }
                 } 
                 />
-              <input type='submit' />
+              <input type='submit' className="btn btn-light btn-lg"/>
             </form>
         </div>)
 }

@@ -1,1 +1,12 @@
 /* Styles go here */
+.body{
+    font-size: 2rem;
+}
+
+.navbar{
+    margin-bottom: 40px;
+}
+
+.document{
+    font-size: 1.5rem;
+}

@@ -1,13 +1,15 @@
 import React, { Component } from 'react';
 import Web3 from 'web3';
-import './App.css';
 import Document from '../abis/Document.json'
+import Header from './Header';
+import Doc from './Document';
+import Insert from './Insert';
+
 
 const ipfsClient = require('ipfs-http-client')
 const ipfs = ipfsClient({ host: 'ipfs.infura.io', port: 5001, protocol: 'https' }) // leaving out the arguments will default to these values
 
 class App extends Component {
-
   async componentWillMount() {
     await this.loadWeb3()
     await this.loadBlockchainData()
@@ -33,21 +35,26 @@ class App extends Component {
     this.setState({ account: accounts[0] })
     const networkId = await web3.eth.net.getId()
     const networkData = Document.networks[networkId]
-    // if(networkData) {
-    //   const contract = web3.eth.Contract(Document.abi, networkData.address)
-    //   this.setState({ contract })
-    //   const docHash = await contract.methods.get().call()
-    //   this.setState({ docHash })
-    // } else {
-    //   window.alert('Smart contract not deployed to detected network.')
-    // }
+    if(networkData) {
+      const contract = web3.eth.Contract(Document.abi, networkData.address)
+      this.setState({ contract })
+      const docCount = await contract.methods.getCount().call()
+      this.setState({ docCount })
+      for(var i=0; i < docCount; i++) {
+        const doc = await contract.methods.getDocument(i).call()
+        this.setState(prevState => {return { docHash : [ ...prevState.docHash, doc]}})
+      }
+    } else {
+      window.alert('Smart contract not deployed to detected network.')
+    }
   }
-
+  
   constructor(props) {
     super(props)
 
     this.state = {
-      docHash: '',
+      docHash: [],
+      docCount: 0,
       contract: null,
       web3: null,
       buffer: null,
@@ -66,7 +73,7 @@ class App extends Component {
     }
   }
 
-  onSubmit = (event) => {
+  addDocument = (event) => {
     event.preventDefault()
     console.log("Submitting file to ipfs...")
     ipfs.add(this.state.buffer, (error, result) => {
@@ -76,16 +83,40 @@ class App extends Component {
         return
       }
        this.state.contract.methods.addDocument(result[0].hash).send({ from: this.state.account }).then((r) => {
-         return this.setState({ docHash: result[0].hash })
+         return this.setState(prevState => {return { docHash: [ ...prevState.docHash, result[0].hash] } })
        })
     })
   }
 
+  deleteDocument = (event, id) => {
+    console.log("Deleting file from blockchain")
+    console.log(id)
+    console.log(this.state.docHash)
+    this.state.contract.methods.removeDocument(id).send({ from: this.state.account }).then((r) => {
+      alert(`Item ${id+1} has been successfully deleted!!`);
+      this.setState(prevValue => {return {docHash: prevValue.docHash.filter((item, index)=>{
+          return index !== id;
+          })
+        }
+      })
+      this.setState(state => {return {docCount : state.docCount-1}})
+      console.log(this.state.docHash)
+    })
+  }
+
+
   render() {
     return (
-      <div>
-        <Header account={this.state.account}/>
-        
+      <div className='body'>
+        <Header account={this.state.account} />
+        <h1 className='central'>List of Files</h1>
+        <ul>
+        {this.state.docHash.map((doc, index) => 
+          <li><Doc docHash={doc} key={index} index = {index} handleClick={this.deleteDocument}/></li>
+        )}
+        </ul>
+        <br/> <br/>
+        <Insert handleChange={this.captureFile} handleSubmit={this.addDocument} />
       </div>
     );
   }
